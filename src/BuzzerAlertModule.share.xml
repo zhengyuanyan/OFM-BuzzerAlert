@@ -109,43 +109,54 @@
           <Dynamic>
             <!-- 一个 OpenKNX 模块只能有一个 <Channel>（模块列表按 Channel 生成），
                  所以设置与故障点使能都放在同一个 ParameterBlock 里，用标题分隔。 -->
-            <Channel Id="%AID%_CH-%PREFIX%" Number="%PREFIX%" Name="Main" Text="蜂鸣器报警" Icon="alert-outline">
-              <ParameterBlock Id="%AID%_PB-nnn" Name="BuzzerSettings" Text="蜂鸣器报警" Icon="alert-outline" ShowInComObjectTree="true">
+            <!-- HelpContext 引用 src/Baggages/Help_cn/BUZ-*.md 生成的话题名
+                 （producer 复制的文件名为 "<Prefix>-<Kapitel>"，这里前缀即 BUZ）。
+                 改名时要与文件名一起改，否则 ETS 里点帮助会报"找不到帮助主题"。 -->
+            <Channel Id="%AID%_CH-%PREFIX%" Number="%PREFIX%" Name="Main" Text="蜂鸣器报警" Icon="alert-outline" HelpContext="BUZ-Allgemein">
+              <ParameterBlock Id="%AID%_PB-nnn" Name="BuzzerSettings" Text="蜂鸣器报警" Icon="alert-outline" ShowInComObjectTree="true" HelpContext="BUZ-Allgemein">
                 <ParameterSeparator Id="%AID%_PS-nnn" Text="蜂鸣器报警 版本 %ModuleVersion%" UIHint="Headline" />
                 <ParameterSeparator Id="%AID%_PS-nnn" Text="" UIHint="HorizontalRuler" />
 
                 <ParameterSeparator Id="%AID%_PS-nnn" Text="设置" UIHint="Headline" />
-                <ParameterRefRef RefId="%AID%_UP-%TT%00001_R-%TT%0000101" IndentLevel="1" />
-                <ParameterRefRef RefId="%AID%_UP-%TT%00002_R-%TT%0000201" IndentLevel="1" />
-                <ParameterRefRef RefId="%AID%_UP-%TT%00003_R-%TT%0000301" IndentLevel="1" />
+                <ParameterRefRef RefId="%AID%_UP-%TT%00001_R-%TT%0000101" IndentLevel="1" HelpContext="BUZ-Allgemein" />
+                <ParameterRefRef RefId="%AID%_UP-%TT%00002_R-%TT%0000201" IndentLevel="1" HelpContext="BUZ-Rhythmus" />
+                <ParameterRefRef RefId="%AID%_UP-%TT%00003_R-%TT%0000301" IndentLevel="1" HelpContext="BUZ-Frequenz" />
 
                 <ParameterSeparator Id="%AID%_PS-nnn" Text="总线电源故障点" UIHint="Headline" />
-                <ParameterRefRef RefId="%AID%_UP-%TT%00004_R-%TT%0000401" IndentLevel="1" />
-                <ParameterRefRef RefId="%AID%_UP-%TT%00005_R-%TT%0000501" IndentLevel="1" />
-                <ParameterRefRef RefId="%AID%_UP-%TT%00006_R-%TT%0000601" IndentLevel="1" />
-                <ParameterRefRef RefId="%AID%_UP-%TT%00007_R-%TT%0000701" IndentLevel="1" />
-                <ParameterRefRef RefId="%AID%_UP-%TT%00008_R-%TT%0000801" IndentLevel="1" />
-                <ParameterRefRef RefId="%AID%_UP-%TT%00009_R-%TT%0000901" IndentLevel="1" />
-                <ParameterRefRef RefId="%AID%_UP-%TT%00010_R-%TT%0001001" IndentLevel="1" />
-                <ParameterRefRef RefId="%AID%_UP-%TT%00011_R-%TT%0001101" IndentLevel="1" />
+                <ParameterRefRef RefId="%AID%_UP-%TT%00004_R-%TT%0000401" IndentLevel="1" HelpContext="BUZ-Fehler" />
+                <ParameterRefRef RefId="%AID%_UP-%TT%00005_R-%TT%0000501" IndentLevel="1" HelpContext="BUZ-Fehler" />
+                <ParameterRefRef RefId="%AID%_UP-%TT%00006_R-%TT%0000601" IndentLevel="1" HelpContext="BUZ-Fehler" />
+                <ParameterRefRef RefId="%AID%_UP-%TT%00007_R-%TT%0000701" IndentLevel="1" HelpContext="BUZ-Fehler" />
+                <ParameterRefRef RefId="%AID%_UP-%TT%00008_R-%TT%0000801" IndentLevel="1" HelpContext="BUZ-Fehler" />
+                <ParameterRefRef RefId="%AID%_UP-%TT%00009_R-%TT%0000901" IndentLevel="1" HelpContext="BUZ-Fehler" />
+                <ParameterRefRef RefId="%AID%_UP-%TT%00010_R-%TT%0001001" IndentLevel="1" HelpContext="BUZ-Fehler" />
+                <ParameterRefRef RefId="%AID%_UP-%TT%00011_R-%TT%0001101" IndentLevel="1" HelpContext="BUZ-Fehler" />
 
                 <ParameterSeparator Id="%AID%_PS-nnn" Text="辅助电源故障点" UIHint="Headline" />
-                <ParameterRefRef RefId="%AID%_UP-%TT%00012_R-%TT%0001201" IndentLevel="1" />
-                <ParameterRefRef RefId="%AID%_UP-%TT%00013_R-%TT%0001301" IndentLevel="1" />
-                <ParameterRefRef RefId="%AID%_UP-%TT%00014_R-%TT%0001401" IndentLevel="1" />
-                <ParameterRefRef RefId="%AID%_UP-%TT%00015_R-%TT%0001501" IndentLevel="1" />
-                <ParameterRefRef RefId="%AID%_UP-%TT%00016_R-%TT%0001601" IndentLevel="1" />
-                <ParameterRefRef RefId="%AID%_UP-%TT%00017_R-%TT%0001701" IndentLevel="1" />
-                <ParameterRefRef RefId="%AID%_UP-%TT%00018_R-%TT%0001801" IndentLevel="1" />
-                <ParameterRefRef RefId="%AID%_UP-%TT%00019_R-%TT%0001901" IndentLevel="1" />
+                <ParameterRefRef RefId="%AID%_UP-%TT%00012_R-%TT%0001201" IndentLevel="1" HelpContext="BUZ-Fehler" />
+                <ParameterRefRef RefId="%AID%_UP-%TT%00013_R-%TT%0001301" IndentLevel="1" HelpContext="BUZ-Fehler" />
+                <ParameterRefRef RefId="%AID%_UP-%TT%00014_R-%TT%0001401" IndentLevel="1" HelpContext="BUZ-Fehler" />
+                <ParameterRefRef RefId="%AID%_UP-%TT%00015_R-%TT%0001501" IndentLevel="1" HelpContext="BUZ-Fehler" />
+                <ParameterRefRef RefId="%AID%_UP-%TT%00016_R-%TT%0001601" IndentLevel="1" HelpContext="BUZ-Fehler" />
+                <ParameterRefRef RefId="%AID%_UP-%TT%00017_R-%TT%0001701" IndentLevel="1" HelpContext="BUZ-Fehler" />
+                <ParameterRefRef RefId="%AID%_UP-%TT%00018_R-%TT%0001801" IndentLevel="1" HelpContext="BUZ-Fehler" />
+                <ParameterRefRef RefId="%AID%_UP-%TT%00019_R-%TT%0001901" IndentLevel="1" HelpContext="BUZ-Fehler" />
 
                 <ParameterSeparator Id="%AID%_PS-nnn" Text="通信对象" UIHint="Headline" />
-                <ComObjectRefRef RefId="%AID%_O-%TT%00001_R-%TT%0000101" /> <!-- KO 40: 蜂鸣器静音 -->
+                <ComObjectRefRef RefId="%AID%_O-%TT%00001_R-%TT%0000101" HelpContext="BUZ-Stumm" /> <!-- KO 40: 蜂鸣器静音 -->
               </ParameterBlock>
             </Channel>
           </Dynamic>
         </ApplicationProgram>
       </ApplicationPrograms>
+      <!-- 上下文帮助：producer 会把 ./Baggages/Help_cn 里的 .md 合并进项目的
+           <Project>.baggages/<BaggagesRootDir>/Help_cn.zip（复制时 .md 自动改名为 .txt）。
+           缺少本节点时，HelpContext 指向的话题在 ETS 里不存在，点帮助无反应。 -->
+      <Baggages>
+        <Baggage TargetPath="" Name="Help_cn.zip" Id="%FILE-HELP-cn%">
+          <FileInfo TimeInfo="%DATETIME%" />
+        </Baggage>
+      </Baggages>
     </Manufacturer>
   </ManufacturerData>
 </KNX>
