@@ -1,0 +1,18 @@
+{
+    "name": "OFM-BuzzerAlert",
+    "version": "0.1.0",
+    "description": "Passive buzzer alarm module for OpenKNX power supplies (per fault enable, adjustable frequency and rhythm)",
+    "homepage": "https://openknx.de",
+    "authors": {
+        "name": "OpenKNX",
+        "email": "info@openknx.de",
+        "url": "https://openknx.de",
+        "maintainer": true
+    },
+    "repository": {
+        "type": "git",
+        "url": "https://github.com/zhengyuanyan/OFM-BuzzerAlert.git"
+    },
+    "dependencies": {
+    }
+}
