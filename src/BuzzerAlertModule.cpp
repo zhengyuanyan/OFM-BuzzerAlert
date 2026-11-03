@@ -52,8 +52,8 @@ void BuzzerAlertModule::setup(bool configured)
 
     applyParameters(configured);
 
-    logInfoP("Buzzer: %s, %u Hz, rhythm %s, %s", _enabled ? "enabled" : "disabled", _frequencyHz,
-             cRhythms[_rhythm].name, _muted ? "muted" : "unmuted");
+    logInfoP("Buzzer: %s, %u Hz, %s (per-fault rhythms)", _enabled ? "enabled" : "disabled", _frequencyHz,
+             _muted ? "muted" : "unmuted");
 }
 
 void BuzzerAlertModule::applyParameters(bool configured)
@@ -63,16 +63,14 @@ void BuzzerAlertModule::applyParameters(bool configured)
         // 没下载过 ETS 参数：保持静音，只留控制台调试
         _enabled = false;
         _frequencyHz = 3000;
-        _rhythm = 1;
         _enables = 0;
+        for (uint8_t i = 0; i < BuzzerAlert_SourceCount; i++)
+            _rhythms[i] = 1; // 慢速断续
         return;
     }
 
     _enabled = ParamBUZ_Enabled;
     _frequencyHz = (uint16_t)ParamBUZ_Frequency * 100; // ETS 以 100 Hz 为单位（15..50）
-    _rhythm = (uint8_t)ParamBUZ_Rhythm;
-    if (_rhythm >= cRhythmCount)
-        _rhythm = 0;
 
     // 16 个故障点使能 -> 位掩码（宏不可索引，只能逐项列出）
     uint16_t enables = 0;
@@ -94,7 +92,48 @@ void BuzzerAlertModule::applyParameters(bool configured)
     if (ParamBUZ_AuxInputLow) enables |= 1u << BuzzerAlert_AuxInputLow;
     _enables = enables;
 
+    // 每个故障点各自的报警节奏（宏不可索引，只能逐项列出）
+    _rhythms[BuzzerAlert_BusSC8815NoAnswer] = (uint8_t)ParamBUZ_BusSC8815NoAnswerRhythm;
+    _rhythms[BuzzerAlert_BusINANoAnswer] = (uint8_t)ParamBUZ_BusINANoAnswerRhythm;
+    _rhythms[BuzzerAlert_BusTempNoAnswer] = (uint8_t)ParamBUZ_BusTempNoAnswerRhythm;
+    _rhythms[BuzzerAlert_BusVbusShort] = (uint8_t)ParamBUZ_BusVbusShortRhythm;
+    _rhythms[BuzzerAlert_BusOTP] = (uint8_t)ParamBUZ_BusOTPRhythm;
+    _rhythms[BuzzerAlert_BusOverCurrent] = (uint8_t)ParamBUZ_BusOverCurrentRhythm;
+    _rhythms[BuzzerAlert_BusInputHigh] = (uint8_t)ParamBUZ_BusInputHighRhythm;
+    _rhythms[BuzzerAlert_BusInputLow] = (uint8_t)ParamBUZ_BusInputLowRhythm;
+    _rhythms[BuzzerAlert_AuxSC8815NoAnswer] = (uint8_t)ParamBUZ_AuxSC8815NoAnswerRhythm;
+    _rhythms[BuzzerAlert_AuxINANoAnswer] = (uint8_t)ParamBUZ_AuxINANoAnswerRhythm;
+    _rhythms[BuzzerAlert_AuxTempNoAnswer] = (uint8_t)ParamBUZ_AuxTempNoAnswerRhythm;
+    _rhythms[BuzzerAlert_AuxVbusShort] = (uint8_t)ParamBUZ_AuxVbusShortRhythm;
+    _rhythms[BuzzerAlert_AuxOTP] = (uint8_t)ParamBUZ_AuxOTPRhythm;
+    _rhythms[BuzzerAlert_AuxOverCurrent] = (uint8_t)ParamBUZ_AuxOverCurrentRhythm;
+    _rhythms[BuzzerAlert_AuxInputHigh] = (uint8_t)ParamBUZ_AuxInputHighRhythm;
+    _rhythms[BuzzerAlert_AuxInputLow] = (uint8_t)ParamBUZ_AuxInputLowRhythm;
+
+    // 防御：ETS 数据损坏 / 版本不匹配时回退到“慢速断续”
+    for (uint8_t i = 0; i < BuzzerAlert_SourceCount; i++)
+        if (_rhythms[i] >= cRhythmCount)
+            _rhythms[i] = 1;
+
     _cycleStart = delayTimerInit();
+    _activeRhythm = 0xFF; // 下一个周期重新开始
+}
+
+/**
+ * @brief 当前使用的节奏
+ *
+ * 同时有多个“已启用且有故障”的点时，取枚举顺序最靠前的那个（总线侧优先，
+ * 同侧按 BpsFault 位序）——每个故障点可以配不同节奏，现场听声就能分辨。
+ */
+uint8_t BuzzerAlertModule::activeRhythm() const
+{
+    const uint16_t mask = activeMask();
+    for (uint8_t i = 0; i < BuzzerAlert_SourceCount; i++)
+    {
+        if (mask & ((uint16_t)1 << i))
+            return _rhythms[i];
+    }
+    return 0;
 }
 
 void BuzzerAlertModule::loop(bool configured)
@@ -178,11 +217,21 @@ void BuzzerAlertModule::updateBuzzer(uint32_t now)
     if (!_enabled || _muted || activeMask() == 0)
     {
         buzzerOn(false);
+        _activeRhythm = 0xFF;
         _cycleStart = now; // 下次报警从“响”开始
         return;
     }
 
-    const BuzzerAlertRhythm &rhythm = cRhythms[_rhythm];
+    // 取“优先故障点”的节奏；节奏变了就从“响”重新开始一个周期
+    const uint8_t rhythmIndex = activeRhythm();
+    if (rhythmIndex != _activeRhythm)
+    {
+        _activeRhythm = rhythmIndex;
+        _cycleStart = now;
+        logDebugP("Buzzer: rhythm -> %s (active mask 0x%04X)", cRhythms[rhythmIndex].name, activeMask());
+    }
+
+    const BuzzerAlertRhythm &rhythm = cRhythms[rhythmIndex];
 
     bool on;
     if (rhythm.onMS == 0)
@@ -244,15 +293,15 @@ void BuzzerAlertModule::beep(uint16_t durationMS)
 
 void BuzzerAlertModule::showInformations()
 {
-    logInfoP("Buzzer: %s, %u Hz, rhythm %s, %s, %s", _enabled ? "enabled" : "disabled", _frequencyHz,
-             cRhythms[_rhythm].name, _muted ? "muted" : "unmuted", _buzzerOn ? "sounding" : "silent");
+    logInfoP("Buzzer: %s, %u Hz, %s, %s", _enabled ? "enabled" : "disabled", _frequencyHz,
+             _muted ? "muted" : "unmuted", _buzzerOn ? "sounding" : "silent");
     logInfoP("Buzzer: faults 0x%04X, enabled 0x%04X -> active 0x%04X", _faultMask, _enables, activeMask());
 
-    // 逐个列出“已启用且当前存在的故障点”，便于现场定位
+    // 逐个列出“已启用且当前存在的故障点”及其自己的节奏，便于现场定位
     for (uint8_t i = 0; i < BuzzerAlert_SourceCount; i++)
     {
         if (activeMask() & ((uint16_t)1 << i))
-            logInfoP("Buzzer: alarm source %u: %s", i, cSourceNames[i]);
+            logInfoP("Buzzer: alarm source %u: %s (rhythm %s)", i, cSourceNames[i], cRhythms[_rhythms[i]].name);
     }
 }
 
@@ -281,8 +330,9 @@ bool BuzzerAlertModule::processCommand(const std::string cmd, bool diagnoseKo)
     {
         if (diagnoseKo)
             openknx.console.writeDiagenoseKo("Buzzer: %s, %u Hz, rhythm %s, %s, faults 0x%04X, active 0x%04X",
-                                            _enabled ? "enabled" : "disabled", _frequencyHz, cRhythms[_rhythm].name,
-                                            _muted ? "muted" : "unmuted", _faultMask, activeMask());
+                                            _enabled ? "enabled" : "disabled", _frequencyHz,
+                                            cRhythms[activeRhythm()].name, _muted ? "muted" : "unmuted", _faultMask,
+                                            activeMask());
         else
             showInformations();
 
